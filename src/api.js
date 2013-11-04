@@ -151,6 +151,16 @@ Api.prototype.checkPermission = function (session, permission)
 	}
 
 	return this.xo.users.first(user_id).then(function (user) {
+		if (!user)
+		{
+			console.warn(
+				'Api.checkPermission: XO.users.first returned empty result. user_id: %s',
+				user_id
+			);
+
+			throw Api.err.UNAUTHORIZED;
+		}
+
 		if (!user.hasPermission(permission))
 		{
 			throw Api.err.UNAUTHORIZED;

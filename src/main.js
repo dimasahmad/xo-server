@@ -23,6 +23,13 @@ var api = new Api(xo);
 
 var http_servers = [];
 
+
+// Modified by Martin Dobrev @ 2013-10-22
+var ldap = require('ldapjs');
+var Knex = require('knex');
+ldap.Attribute.settings.guid_format = ldap.GUID_FORMAT_B;
+// End of mod by Martin Dobrev
+
 //////////////////////////////////////////////////////////////////////
 
 function json_api_call(session, message)
@@ -359,6 +366,25 @@ cfg.merge({
 	'redis': {
 		'uri': 'tcp://127.0.0.1:6379',
 	},
+	// Modified by Martin Dobrev @ 2013-10-22
+	'mysql': {
+		'enabled'  : false,
+		'uri'      : 'mysql://xoauser:xoapass@localhost:3306/xoa',
+		'username' : 'xoauser',
+		'password' : 'xoapass',
+		'database' : 'xoa',
+		'host'     : 'localhost',
+		'port'     : 3306,
+	},
+	'ldap': {
+		'enabled'  : false,
+		'host'     : 'localhost',
+		'binddn'   : 'dc=example,dc=com',
+	},
+	'userdb': {
+		'type'     : 'redis' // Accepted values 'redis', 'mysql' and 'ldap'. More to come later on
+	},
+	// End of mod by Martin Dobrev
 });
 
 function read_file(file)
@@ -405,6 +431,34 @@ read_file(__dirname +'/../config/local.yaml').then(
 				})
 		);
 	}
+
+	// Modified by Martin Dobrev
+	if (cfg.get('mysql', 'enabled'))
+	{
+		var host = cfg.get('mysql', 'host');
+		var port = cfg.get('mysql', 'port');
+		var database = cfg.get('mysql', 'database');
+		var username = cfg.get('mysql', 'username');
+		var password = cfg.get('mysql', 'password');
+
+		// Initialize Knex
+		//
+		// /!\ Initialize it only once
+		//
+		// on later stage use knex = require('knex').knex for DB queries
+		Knex.knex = Knex.initialize({
+			client: 'mysql',
+			connection: {
+				host: host,
+				user: username,
+				password: password,
+				database: database,
+				port: port,
+				charset: 'utf8',
+			}
+		});
+	}
+	// End of mod by Martin Dobrev
 
 	if (cfg.get('https', 'enabled'))
 	{
